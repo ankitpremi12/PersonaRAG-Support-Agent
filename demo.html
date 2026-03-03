@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Support Agent — Demo UI</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --accent: #7c6af7;
+    --accent2: #f75e6a;
+    --accent3: #4fe3c1;
+    --text: #e0e0f0;
+    --muted: #5a5a7a;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo-badge {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  header span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    flex: 1;
+    max-height: calc(100vh - 73px);
+  }
+
+  /* ---- CHAT PANEL ---- */
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--muted);
+    text-align: center;
+    padding: 40px;
+  }
+
+  .empty-state .icon { font-size: 48px; opacity: 0.4; }
+  .empty-state h2 { font-size: 20px; color: var(--text); opacity: 0.6; }
+  .empty-state p { font-family: var(--mono); font-size: 12px; max-width: 320px; line-height: 1.7; }
+
+  .sample-queries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .sample-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .sample-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(124,106,247,0.08);
+  }
+
+  /* Messages */
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: msgIn 0.3s ease;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { align-items: flex-end; }
+  .msg.agent { align-items: flex-start; }
+
+  .msg-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .msg-bubble {
+    max-width: 78%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    line-height: 1.65;
+    font-size: 14px;
+  }
+
+  .msg.user .msg-bubble {
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg.agent .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    white-space: pre-wrap;
+  }
+
+  .msg.agent.escalated .msg-bubble {
+    border-color: var(--accent2);
+    background: rgba(247,94,106,0.08);
+  }
+
+  .persona-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  .persona-chip.technical_expert  { color: var(--accent3); border-color: rgba(79,227,193,0.3); background: rgba(79,227,193,0.06); }
+  .persona-chip.frustrated_user   { color: var(--accent2); border-color: rgba(247,94,106,0.3); background: rgba(247,94,106,0.06); }
+  .persona-chip.business_executive{ color: var(--accent);  border-color: rgba(124,106,247,0.3); background: rgba(124,106,247,0.06); }
+
+  .escalation-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    background: rgba(247,94,106,0.1);
+    border: 1px solid rgba(247,94,106,0.3);
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 4px;
+  }
+
+  /* Input */
+  .chat-input-wrap {
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .chat-input-wrap textarea {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 12px 16px;
+    resize: none;
+    min-height: 48px;
+    max-height: 120px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .chat-input-wrap textarea:focus { border-color: var(--accent); }
+  .chat-input-wrap textarea::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 48px; height: 48px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .send-btn:hover:not(:disabled) { background: #9585fa; transform: scale(1.04); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ---- SIDEBAR ---- */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    background: var(--surface);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .sidebar-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-section h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* Architecture diagram */
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .flow-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid transparent;
+    transition: all 0.25s;
+    color: var(--muted);
+  }
+  .flow-step.active {
+    color: var(--text);
+    border-color: var(--accent);
+    background: rgba(124,106,247,0.08);
+    box-shadow: 0 0 12px rgba(124,106,247,0.15);
+  }
+  .flow-step.done { color: var(--accent3); border-color: transparent; }
+  .flow-step .step-icon { font-size: 14px; width: 18px; text-align: center; }
+  .flow-arrow { text-align: center; color: var(--border); font-size: 10px; margin: 1px 0; }
+
+  /* KB docs */
+  .doc-chips { display: flex; flex-direction: column; gap: 6px; }
+  .doc-chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: rgba(255,255,255,0.02);
+    line-height: 1.5;
+  }
+  .doc-chip.retrieved {
+    color: var(--accent3);
+    border-color: rgba(79,227,193,0.3);
+    background: rgba(79,227,193,0.06);
+  }
+  .doc-chip strong { display: block; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .stat-card .stat-label { font-family: var(--mono); font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .stat-card .stat-value { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .stat-card.accent .stat-value { color: var(--accent); }
+  .stat-card.green .stat-value  { color: var(--accent3); }
+  .stat-card.red .stat-value    { color: var(--accent2); }
+
+  /* Thinking indicator */
+  .thinking {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    padding: 6px 0;
+  }
+  .dots span {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 0 2px;
+    animation: bounce 1.2s infinite;
+  }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  .confidence-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .confidence-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+    transition: width 0.5s ease;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">🤖</div>
+  <h1>Support Agent</h1>
+  <span>DEMO — Persona-Adaptive</span>
+</header>
+
+<div class="container">
+  <!-- CHAT PANEL -->
+  <div class="chat-panel">
+    <div class="chat-messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">💬</div>
+        <h2>Try a message below</h2>
+        <p>The agent detects your persona and adapts its tone. Try these examples:</p>
+        <div class="sample-queries">
+          <button class="sample-btn" onclick="fillMsg('My nginx is returning 504 errors. proxy_read_timeout is currently 60s.')">🔧 Tech: 504 timeout</button>
+          <button class="sample-btn" onclick="fillMsg('This is ridiculous! The dashboard login NEVER works I have tried everything!!')">😤 Frustrated: login</button>
+          <button class="sample-btn" onclick="fillMsg('How long does the refund take? I need to report to the board.')">💼 Executive: refund</button>
+          <button class="sample-btn" onclick="fillMsg('I need to speak with a human agent right now.')">🚨 Escalation trigger</button>
+          <button class="sample-btn" onclick="fillMsg('What are the rate limits for the API and how do I handle 429 errors?')">🔧 Tech: rate limits</button>
+          <button class="sample-btn" onclick="fillMsg('Do you have SOC2 compliance? What\u2019s the uptime SLA for enterprise?')">💼 Executive: compliance</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-wrap">
+      <textarea id="userInput" placeholder="Type your support request..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Pipeline Flow -->
+    <div class="sidebar-section">
+      <h3>Pipeline State</h3>
+      <div class="flow-steps" id="flowSteps">
+        <div class="flow-step" id="step-persona"><span class="step-icon">🧠</span> Persona Detection</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step" id="step-escalation"><span class="step-icon">🚨</span> Escalation Check</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step" id="step-retrieval"><span class="step-icon">🔍</span> KB Retrieval (RAG)</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step" id="step-generation"><span class="step-icon">✍️</span> Response Generation</div>
+      </div>
+    </div>
+
+    <!-- Persona Info -->
+    <div class="sidebar-section" id="personaSection" style="display:none">
+      <h3>Detected Persona</h3>
+      <div id="personaDisplay"></div>
+    </div>
+
+    <!-- Retrieved Docs -->
+    <div class="sidebar-section" id="docsSection" style="display:none">
+      <h3>Retrieved KB Docs</h3>
+      <div class="doc-chips" id="docChips"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="sidebar-section">
+      <h3>Session Stats</h3>
+      <div class="stats-grid">
+        <div class="stat-card accent">
+          <div class="stat-label">Messages</div>
+          <div class="stat-value" id="statMessages">0</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Escalations</div>
+          <div class="stat-value" id="statEscalations">0</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Resolved</div>
+          <div class="stat-value" id="statResolved">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Conf.</div>
+          <div class="stat-value" id="statConf" style="color:var(--text)">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const BACKEND_URL = "http://127.0.0.1:8000";
+
+let stats = { messages: 0, escalations: 0, resolved: 0, confidences: [] };
+let attemptCount = 1;
+
+function fillMsg(text) {
+  const inp = document.getElementById('userInput');
+  inp.value = text;
+  inp.style.height = 'auto';
+  inp.style.height = inp.scrollHeight + 'px';
+  inp.focus();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const message = input.value.trim();
+  if (!message) return;
+
+  // Clear empty state
+  document.getElementById('emptyState')?.remove();
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage('user', message);
+  stats.messages++;
+  updateStats();
+
+  // Show thinking
+  const thinkingId = appendThinking();
+  resetFlowSteps();
+  activateStep('step-persona');
+
+  try {
+    // Simulate pipeline steps visually
+    await delay(400);
+    activateStep('step-escalation');
+    await delay(300);
+    activateStep('step-retrieval');
+
+    const res = await fetch(`${BACKEND_URL}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, attempt_count: attemptCount })
+    });
+
+    activateStep('step-generation');
+    await delay(200);
+
+    const data = await res.json();
+    removeThinking(thinkingId);
+    markAllDone();
+
+    // Update sidebar
+    updatePersonaSidebar(data.persona);
+    updateDocsSidebar(data.docs_used || []);
+
+    const isEscalated = data.escalated;
+    appendMessage('agent', data.response, {
+      persona: data.persona,
+      escalated: isEscalated,
+      escalationContext: data.escalation_context
+    });
+
+    if (isEscalated) {
+      stats.escalations++;
+      attemptCount = 1;
+    } else {
+      stats.resolved++;
+      attemptCount++;
+    }
+
+    if (data.persona?.confidence) {
+      stats.confidences.push(data.persona.confidence);
+    }
+    updateStats();
+
+  } catch (err) {
+    removeThinking(thinkingId);
+    appendMessage('agent', `⚠️ Could not reach the backend. Make sure the FastAPI server is running:\n\nuvicorn app:app --reload\n\nError: ${err.message}`, { error: true });
+    resetFlowSteps();
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function appendMessage(role, text, meta = {}) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}${meta.escalated ? ' escalated' : ''}`;
+
+  let label = role === 'user' ? 'You' : '🤖 Support Agent';
+  let extra = '';
+
+  if (meta.persona) {
+    const p = meta.persona;
+    const icons = { technical_expert: '⚙️', frustrated_user: '😤', business_executive: '💼' };
+    extra += `<div class="persona-chip ${p.detected}">${icons[p.detected] || '👤'} ${p.detected.replace('_', ' ')} · ${Math.round((p.confidence||0)*100)}%</div>`;
+  }
+  if (meta.escalated) {
+    extra += `<div class="escalation-badge">🚨 Escalated to human agent</div>`;
+  }
+  if (meta.error) {
+    div.style.alignItems = 'flex-start';
+  }
+
+  div.innerHTML = `
+    <div class="msg-label">${label}</div>
+    <div class="msg-bubble">${escHtml(text)}</div>
+    ${extra}
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+let thinkingCounter = 0;
+function appendThinking() {
+  const id = `thinking-${++thinkingCounter}`;
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.id = id;
+  div.className = 'msg agent';
+  div.innerHTML = `<div class="msg-label">🤖 Support Agent</div><div class="thinking"><div class="dots"><span></span><span></span><span></span></div> Analyzing...</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return id;
+}
+function removeThinking(id) {
+  document.getElementById(id)?.remove();
+}
+
+function updatePersonaSidebar(persona) {
+  if (!persona) return;
+  const sec = document.getElementById('personaSection');
+  sec.style.display = '';
+  const icons = { technical_expert: '⚙️', frustrated_user: '😤', business_executive: '💼' };
+  const pct = Math.round((persona.confidence || 0) * 100);
+  document.getElementById('personaDisplay').innerHTML = `
+    <div class="persona-chip ${persona.detected}" style="margin-bottom:10px">
+      ${icons[persona.detected] || '👤'} ${persona.detected.replace(/_/g, ' ')}
+    </div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">Confidence: ${pct}%</div>
+    <div class="confidence-bar"><div class="confidence-bar-fill" style="width:${pct}%"></div></div>
+    ${persona.signals?.length ? `<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px">Signals: ${persona.signals.slice(0,3).join(', ')}</div>` : ''}
+  `;
+}
+
+function updateDocsSidebar(docIds) {
+  if (!docIds.length) return;
+  const sec = document.getElementById('docsSection');
+  sec.style.display = '';
+  const allDocs = {
+    'DOC_1': 'API Timeout Issue',
+    'DOC_2': 'Billing Refund Policy',
+    'DOC_3': 'Dashboard Login Error',
+    'DOC_4': 'API Rate Limits',
+    'DOC_5': 'Data Export & Compliance',
+    'DOC_6': 'Integration Setup',
+    'DOC_7': 'Account Upgrade & Pricing',
+    'DOC_8': 'Performance Optimization'
+  };
+  document.getElementById('docChips').innerHTML = Object.entries(allDocs).map(([id, title]) => `
+    <div class="doc-chip ${docIds.includes(id) ? 'retrieved' : ''}">
+      <strong>${id}</strong>${title}
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  document.getElementById('statMessages').textContent = stats.messages;
+  document.getElementById('statEscalations').textContent = stats.escalations;
+  document.getElementById('statResolved').textContent = stats.resolved;
+  const avg = stats.confidences.length
+    ? Math.round(stats.confidences.reduce((a,b)=>a+b,0)/stats.confidences.length*100) + '%'
+    : '—';
+  document.getElementById('statConf').textContent = avg;
+}
+
+function resetFlowSteps() {
+  ['step-persona','step-escalation','step-retrieval','step-generation'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+  });
+}
+function activateStep(id) {
+  ['step-persona','step-escalation','step-retrieval','step-generation'].forEach(sid => {
+    const el = document.getElementById(sid);
+    if (el.classList.contains('active')) el.classList.replace('active','done');
+  });
+  document.getElementById(id)?.classList.add('active');
+}
+function markAllDone() {
+  ['step-persona','step-escalation','step-retrieval','step-generation'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    el.classList.add('done');
+  });
+}
+
+function escHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+const delay = ms => new Promise(r => setTimeout(r, ms));
+</script>
+</body>
+</html>

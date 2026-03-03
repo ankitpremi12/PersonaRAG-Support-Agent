@@ -1,0 +1,81 @@
+[DOC_1]
+Title: API Timeout Issue
+Category: technical
+If the API returns a 504 Gateway Timeout, the upstream server took too long to respond.
+Steps to fix:
+1. Increase proxy_read_timeout to 120 seconds in your nginx.conf.
+2. Check backend health using: curl -I https://api.yourservice.com/health
+3. Review recent deploys that may have introduced latency.
+4. Contact support if issue persists beyond 30 minutes.
+Technical note: This is often caused by unoptimized database queries or memory leaks. Use APM tools like Datadog to trace the slow path.
+
+[DOC_2]
+Title: Billing Refund Policy
+Category: billing
+Refunds are processed within 5–7 business days after approval.
+To request a refund:
+1. Go to Settings > Billing > Request Refund.
+2. Select the charge and reason.
+3. Submit the form.
+Refunds are available within 30 days of the charge. Enterprise accounts may have a different SLA. For urgent refund inquiries, escalate to billing@company.com.
+
+[DOC_3]
+Title: Dashboard Login Error
+Category: troubleshooting
+If you cannot log in to the dashboard:
+1. Clear browser cache and cookies.
+2. Try an incognito/private window.
+3. Disable browser extensions, especially ad blockers.
+4. Ensure cookies are enabled.
+5. Try a different browser.
+If SSO is enabled, contact your IT admin to verify your account is active in the identity provider.
+
+[DOC_4]
+Title: API Rate Limits and Quotas
+Category: technical
+Default rate limit: 1000 requests/minute per API key.
+Headers returned: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset.
+If you receive 429 Too Many Requests:
+1. Implement exponential backoff in your client.
+2. Cache responses where possible.
+3. Request a quota increase via the developer portal.
+Enterprise plans have higher limits by default.
+
+[DOC_5]
+Title: Data Export and Compliance
+Category: business
+You can export all account data from Settings > Data > Export.
+Formats available: CSV, JSON, PDF.
+Compliance certifications: SOC 2 Type II, GDPR, HIPAA (Enterprise plan).
+Data is retained for 3 years by default. Enterprise customers can negotiate custom retention policies.
+SLA: 99.9% uptime. Enterprise SLA: 99.99% with dedicated support.
+
+[DOC_6]
+Title: Integration Setup
+Category: technical
+To integrate via REST API:
+1. Generate an API key from Settings > Developer > API Keys.
+2. Include key in header: Authorization: Bearer YOUR_KEY.
+3. Base URL: https://api.yourservice.com/v1
+Webhook setup: Go to Settings > Webhooks, enter your endpoint, select events.
+SDKs available: Python, Node.js, Go, Java.
+
+[DOC_7]
+Title: Account Upgrade and Pricing
+Category: business
+Plans: Starter (free), Pro ($49/mo), Business ($199/mo), Enterprise (custom).
+Upgrading: Go to Settings > Billing > Upgrade Plan.
+Volume discounts available for annual billing (20% off).
+Enterprise features: SSO, custom SLA, dedicated account manager, priority support.
+Contact sales@company.com for enterprise pricing discussions.
+
+[DOC_8]
+Title: Performance Optimization Guide
+Category: technical
+To improve API response times:
+1. Use pagination (limit/offset) for large data sets.
+2. Enable gzip compression on requests.
+3. Use connection pooling in your HTTP client.
+4. Batch requests where the API supports it.
+5. Deploy your service in the same region as the API (us-east-1 recommended).
+P95 latency target: <200ms for standard endpoints.
